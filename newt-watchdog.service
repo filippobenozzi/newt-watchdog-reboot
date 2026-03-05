@@ -1,0 +1,13 @@
+[Unit]
+Description=Watchdog for newt.service with controlled restart and anti-loop protection
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/newt-watchdog.sh
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
