@@ -16,5 +16,4 @@ rm -f /usr/local/sbin/newt-watchdog.sh
 systemctl daemon-reload
 
 echo "Watchdog removed."
-echo "Config left in place: /etc/newt/newt.env"
 echo "State left in place: /var/lib/newt-watchdog"

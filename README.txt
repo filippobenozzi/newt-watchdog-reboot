@@ -11,9 +11,8 @@ Contents:
 Installation:
 1. unzip the package
 2. run as root: ./install.sh
-3. edit /etc/newt/newt.env
-4. test manually: systemctl start newt-watchdog.service
-5. read logs: journalctl -u newt-watchdog.service -n 100 --no-pager
+3. test manually: systemctl start newt-watchdog.service
+4. read logs: journalctl -u newt-watchdog.service -n 100 --no-pager
 
 The watchdog avoids restart loops with:
 - cooldown between restarts

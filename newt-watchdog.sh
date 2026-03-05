@@ -2,12 +2,10 @@
 set -euo pipefail
 
 # --- Configuration ---
-NEWT_ENV_FILE="${NEWT_ENV_FILE:-/etc/newt/newt.env}"
 PERSIST_DIR="${NEWT_WATCHDOG_STATE_DIR:-/var/lib/newt-watchdog}"
 RUNTIME_DIR="${NEWT_WATCHDOG_RUNTIME_DIR:-/run/newt-watchdog}"
 LOCK_FILE="${RUNTIME_DIR}/watchdog.lock"
 
-OFFLINE_MARKER="${PERSIST_DIR}/offline"
 LAST_RESTART_MARKER="${PERSIST_DIR}/last_restart"
 RESTART_HISTORY_FILE="${PERSIST_DIR}/restart_history"
 
@@ -26,22 +24,6 @@ exec 9>"${LOCK_FILE}"
 if ! flock -n 9; then
   exit 0
 fi
-
-# --- Environment loading ---
-NEWT_ENABLED="0"
-NEWT_ID=""
-NEWT_SECRET=""
-PANGOLIN_ENDPOINT=""
-NEWT_ENDPOINT=""
-
-if [[ -f "${NEWT_ENV_FILE}" ]]; then
-  set -a
-  # shellcheck disable=SC1090
-  . "${NEWT_ENV_FILE}"
-  set +a
-fi
-
-ENDPOINT="${PANGOLIN_ENDPOINT:-${NEWT_ENDPOINT:-}}"
 
 now_epoch() {
   date +%s
@@ -157,29 +139,6 @@ recent_connection_error_hits() {
       'failed to connect|failed to get token|failed to report peer bandwidth.*not connected|periodic ping failed|failed to connect to websocket|no route to host|ping failed:.*i/o timeout|failed to read icmp packet|Connection to server lost after [0-9]+ failures|Continuous reconnection attempts will be made' \
     || true
 }
-
-# --- Service configuration check ---
-if [[ "${NEWT_ENABLED:-0}" != "1" || -z "${NEWT_ID:-}" || -z "${NEWT_SECRET:-}" || -z "${ENDPOINT:-}" ]]; then
-  if systemctl is-active --quiet newt.service; then
-    systemctl stop newt.service
-    echo "watchdog: newt disabled or misconfigured -> stopped newt.service"
-  fi
-  rm -f "${OFFLINE_MARKER}" >/dev/null 2>&1 || true
-  exit 0
-fi
-
-# --- Network reachability check ---
-if ! ip route get 1.1.1.1 >/dev/null 2>&1 && ! ip route get 8.8.8.8 >/dev/null 2>&1; then
-  touch "${OFFLINE_MARKER}"
-  echo "watchdog: network unavailable -> waiting for recovery"
-  exit 0
-fi
-
-if [[ -f "${OFFLINE_MARKER}" ]]; then
-  rm -f "${OFFLINE_MARKER}" >/dev/null 2>&1 || true
-  restart_newt "network recovered"
-  exit 0
-fi
 
 # --- Process state check ---
 if ! systemctl is-active --quiet newt.service; then
