@@ -19,6 +19,7 @@ The watchdog avoids restart loops with:
 - post-restart grace period
 - restart burst limit + backoff window
 - persistent restart history in /var/lib/newt-watchdog
+- pause of restart attempts while network is unavailable
 
 The log patterns include:
 - failed to connect
